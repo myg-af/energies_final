@@ -18,25 +18,28 @@ def db_connection(db, user, password, host, port):
 		print(f'Could not find any DB named {db}')
 	return connection
 
+def create_tables():
+	pass 
+
 def cleaning_up_data(file,conn):
 	pass 
 
-def create_table_deliveries():
+def insert_into_deliveries():
 	pass 
 
-def create_table_operators():
+def insert_into_operators():
 	pass 
 
-def create_table_sectors():
+def insert_into_sectors():
 	pass 
 
-def create_table_addresses():
+def insert_into_addresses():
 	pass 
 
-def create_table_cities():
+def insert_into_cities():
 	pass 
 
-def create_table_energies():
+def insert_into_energies():
 	pass 
 
 if __name__ == "__main__":
