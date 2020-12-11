@@ -18,6 +18,8 @@ def db_connection(db, user, password, host, port):
 		print(f'Could not find any DB named {db}')
 	return connection
 
+def cleaning_up_data(file,conn):
+	pass 
 
 def create_table_deliveries():
 	pass 
