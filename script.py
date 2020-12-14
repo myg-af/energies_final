@@ -78,7 +78,7 @@ def create_tables():
 		print('Try again :(')
 
 
-def electricity(file,file2):
+def concatenate_electricity(file,file2):
 	#print(file)
 	#print('*****************************')
 	#print(file2)
@@ -93,7 +93,7 @@ def electricity(file,file2):
 	#print('*****************************')
 	return elec
 
-def gas(file,file2):
+def concatenate_gas(file,file2):
 	#print(file)
 	#print('*****************************')
 	#print(file2)
@@ -108,7 +108,7 @@ def gas(file,file2):
 	#print('*****************************')
 	return gas
 
-def hot_cold(file,file2):
+def concatenate_hot_cold(file,file2):
 	print(file)
 	print('*****************************')
 	print(file2)
@@ -143,12 +143,12 @@ def insert_into_energies():
 
 if __name__ == "__main__":
 	print(__name__)
-	#print(elec_2019)
+
 	conn = db_connection('final_project','sandrinevuachet','postgres','localhost',5432)
 	cursor = conn.cursor()
 	conn.autocommit = True
 	#create_tables()
 
-	elec = electricity(elec_2018,elec_2019)
-	gas = gas(gas_2018,gas_2019)
-	#hot_cold = hot_cold(hot_cold_2018,hot_cold_2019)
+	elec = concatenate_electricity(elec_2018,elec_2019)
+	gas = concatenate_gas(gas_2018,gas_2019)
+	#hot_cold = concatenate_hot_cold(hot_cold_2018,hot_cold_2019)
