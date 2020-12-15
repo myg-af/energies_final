@@ -26,6 +26,11 @@ def db_connection(db, user, password, host, port):
 		print(f'Could not find any DB named {db}')
 	return connection
 
+def alchemy_connection():
+    db ="postgresql://sandrinevuachet:postgres@localhost:5432/final_project"
+    engine = create_engine(db, client_encoding='utf8')
+    return engine
+
 def create_tables():
 	try:
 		cursor.execute("""CREATE TABLE IF NOT EXISTS "operators" (
@@ -79,33 +84,15 @@ def create_tables():
 
 
 def concatenate_electricity(file,file2):
-	#print(file)
-	#print('*****************************')
-	#print(file2)
 	file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
        'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
-	#print('*****************************')
-	#print(file)
 	elec = [file, file2]
 	elec = pd.concat(elec)
-	#print('*****************************')
-	#print(elec)
-	#print('*****************************')
 	return elec
 
 def concatenate_gas(file,file2):
-	#print(file)
-	#print('*****************************')
-	#print(file2)
-	#file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
-       #'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
-	#print('*****************************')
-	#print(file)
 	gas = [file, file2]
 	gas = pd.concat(gas)
-	#print('*****************************')
-	#print(gas)
-	#print('*****************************')
 	return gas
 
 def concatenate_hot_cold(file,file2):
@@ -173,7 +160,19 @@ def insert_into_addresses():
 	pass 
 
 def insert_into_cities():
-	pass 
+	elec_table = elec[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
+	gas_table = gas[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
+	# concat both df to get one
+	table = [elec_table,gas_table]
+	table = pd.concat(table)
+	print(table.info())
+	print('*****************************')
+
+	for x in table:
+		cursor.execute("""INSERT INTO cities (name, code_iris) VALUES (%s, %s );""" % (table['NOM_COMMUNE'],table['CODE_IRIS']))
+
+
+
 
 def insert_into_energies():
 	elec_table = elec['FILIERE'].drop_duplicates()
@@ -202,10 +201,12 @@ if __name__ == "__main__":
 	cursor = conn.cursor()
 	conn.autocommit = True
 	#create_tables()
+	engine = alchemy_connection()
 
 	elec = concatenate_electricity(elec_2018,elec_2019)
 	gas = concatenate_gas(gas_2018,gas_2019)
 	#hot_cold = concatenate_hot_cold(hot_cold_2018,hot_cold_2019)
 	#insert_into_operators()
 	#insert_into_sectors()
-	insert_into_energies()
+	#insert_into_energies()
+	#insert_into_cities()
