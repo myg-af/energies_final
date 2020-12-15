@@ -1,5 +1,5 @@
 import psycopg2
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError as e
 import pandas as pd
 from sqlalchemy import create_engine
 import datetime
@@ -127,10 +127,47 @@ def insert_into_deliveries():
 	pass 
 
 def insert_into_operators():
-	pass 
+
+	#from initial dfs select only operator column
+	elec_table = elec['OPERATEUR'].drop_duplicates()
+	gas_table = gas['OPERATEUR'].drop_duplicates()
+	# concat both df to get one
+	table = [elec_table,gas_table]
+	table = pd.concat(table).rename("name").to_frame()
+	#print(table['name'].values)
+	#print('*****************************')
+	insertifnotexists(table)
+
+def insertifnotexists(table):
+	for name in table['name'].values:
+		query2 = """SELECT name FROM operators WHERE name = (%s)"""
+		cursor.execute(query2,(f'{name}',))
+		result = cursor.fetchall()
+		#print(len(result) == 0)
+		if len(result) == 0 : 
+			query = "INSERT INTO operators (name) VALUES (%s);"
+			cursor.execute(query,(f'{name}',))
 
 def insert_into_sectors():
-	pass 
+	#from initial dfs select only operator column
+	elec_table = elec['CODE_GRAND_SECTEUR'].drop_duplicates()
+	gas_table = gas['CODE_GRAND_SECTEUR'].drop_duplicates()
+	# concat both df to get one
+	table = [elec_table,gas_table]
+	table = pd.concat(table).rename("name").to_frame()
+	print(table['name'].values)
+	print('*****************************')
+	insertifnotexists(table)
+
+def insertifnotexists(table):
+	for name in table['name'].values:
+		query2 = """SELECT name FROM sectors WHERE name = (%s)"""
+		cursor.execute(query2,(f'{name}',))
+		result = cursor.fetchall()
+		#print(len(result) == 0)
+		if len(result) == 0 : 
+			query = "INSERT INTO sectors (name) VALUES (%s);"
+			cursor.execute(query,(f'{name}',))
 
 def insert_into_addresses():
 	pass 
@@ -139,7 +176,24 @@ def insert_into_cities():
 	pass 
 
 def insert_into_energies():
-	pass 
+	elec_table = elec['FILIERE'].drop_duplicates()
+	gas_table = gas['FILIERE'].drop_duplicates()
+	# concat both df to get one
+	table = [elec_table,gas_table]
+	table = pd.concat(table).rename("name").to_frame()
+	print(table['name'].values)
+	print('*****************************')
+	insertifnotexists(table)
+
+def insertifnotexists(table):
+	for name in table['name'].values:
+		query2 = """SELECT name FROM energies WHERE name = (%s)"""
+		cursor.execute(query2,(f'{name}',))
+		result = cursor.fetchall()
+		#print(len(result) == 0)
+		if len(result) == 0 : 
+			query = "INSERT INTO energies (name) VALUES (%s);"
+			cursor.execute(query,(f'{name}',))
 
 if __name__ == "__main__":
 	print(__name__)
@@ -152,3 +206,6 @@ if __name__ == "__main__":
 	elec = concatenate_electricity(elec_2018,elec_2019)
 	gas = concatenate_gas(gas_2018,gas_2019)
 	#hot_cold = concatenate_hot_cold(hot_cold_2018,hot_cold_2019)
+	#insert_into_operators()
+	#insert_into_sectors()
+	insert_into_energies()
