@@ -5,10 +5,10 @@ from sqlalchemy import create_engine
 import datetime
 
 #data
-elec_2018 = pd.read_csv('./data/elec/donnees_elec_adresse_2018.csv',sep=';')
-elec_2019 = pd.read_csv('./data/elec/donnees_elec_adresse_2019.csv',sep=';')
-gas_2018 = pd.read_csv('./data/gaz/donnees_gaz_adresse_2018.csv',sep=';')
-gas_2019 = pd.read_csv('./data/gaz/donnees_gaz_adresse_2018.csv',sep=';')
+elec_2018 = pd.read_csv('./data/elec/donnees_elec_adresse_2018.csv',sep=';',encoding="utf8")
+elec_2019 = pd.read_csv('./data/elec/donnees_elec_adresse_2019.csv',sep=';',encoding="utf8")
+gas_2018 = pd.read_csv('./data/gaz/donnees_gaz_adresse_2018.csv',sep=';',encoding="utf8")
+gas_2019 = pd.read_csv('./data/gaz/donnees_gaz_adresse_2018.csv',sep=';',encoding="utf8")
 #hot_cold_2018 = pd.read_csv('./data/hot_cold/',sep=';')
 #hot_cold_2019 = pd.read_csv('./data/hot_cold/',sep=';')
 
@@ -26,10 +26,10 @@ def db_connection(db, user, password, host, port):
 		print(f'Could not find any DB named {db}')
 	return connection
 
-def alchemy_connection():
-    db ="postgresql://sandrinevuachet:postgres@localhost:5432/final_project"
-    engine = create_engine(db, client_encoding='utf8')
-    return engine
+# def alchemy_connection():
+#     db ="postgresql://sandrinevuachet:postgres@localhost:5432/final_project"
+#     engine = create_engine(db, client_encoding='utf8')
+#     return engine
 
 def create_tables():
 	try:
@@ -62,8 +62,9 @@ def create_tables():
 
 		CREATE TABLE IF NOT EXISTS "cities" (
 		  "id" SERIAL PRIMARY KEY,
-		  "name" varchar UNIQUE, 
-		  "code_iris" int
+		  "name" varchar , 
+		  "code_iris" varchar,
+		  UNIQUE("name","code_iris")
 		);
 
 		CREATE TABLE IF NOT EXISTS "addresses" (
@@ -165,13 +166,27 @@ def insert_into_cities():
 	# concat both df to get one
 	table = [elec_table,gas_table]
 	table = pd.concat(table)
+	#print(table)
+	#print('*****************************')
 	print(table.info())
-	print('*****************************')
-
-	for x in table:
-		cursor.execute("""INSERT INTO cities (name, code_iris) VALUES (%s, %s );""" % (table['NOM_COMMUNE'],table['CODE_IRIS']))
+	insertifnotexists2(table)
 
 
+def insertifnotexists2(table):
+	#print(type(table.values[0][0]))
+	#print(type(table.values[0][1]))
+	for row in table.values:
+		query2 = """SELECT name, code_iris FROM cities WHERE name = %s AND code_iris = %s;"""
+		cursor.execute(query2,(f'{row[0]}',f'{row[1]}'))
+		result = cursor.fetchall()
+		#print(result)
+		#print(len(result) == 0)
+		if len(result) == 0 :
+			query = "INSERT INTO cities (name,code_iris) VALUES (%s,%s);"
+			cursor.execute(query,(f'{row[0]}',f'{row[1]}'))
+			#cursor.execute(query2,(row[0],row[1]))
+			#print(cursor.query)
+			conn.commit()
 
 
 def insert_into_energies():
@@ -200,8 +215,8 @@ if __name__ == "__main__":
 	conn = db_connection('final_project','sandrinevuachet','postgres','localhost',5432)
 	cursor = conn.cursor()
 	conn.autocommit = True
-	#create_tables()
-	engine = alchemy_connection()
+	create_tables()
+	# engine = alchemy_connection()
 
 	elec = concatenate_electricity(elec_2018,elec_2019)
 	gas = concatenate_gas(gas_2018,gas_2019)
@@ -209,4 +224,4 @@ if __name__ == "__main__":
 	#insert_into_operators()
 	#insert_into_sectors()
 	#insert_into_energies()
-	#insert_into_cities()
+	insert_into_cities()
