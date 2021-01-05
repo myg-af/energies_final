@@ -51,10 +51,11 @@ def create_tables():
 		  "year" int,
 		  "iris_code" varchar,
 		  "consumption" varchar,
+		  "address" varchar,
 		  "sector_id" int,
 		  "operator_id" int,
 		  "energy_id" int,
-		  "address_id" int
+		  "city_id" int
 		);
 
 		CREATE TABLE IF NOT EXISTS "energies" (
@@ -79,7 +80,7 @@ def create_tables():
 		);
 
 		ALTER TABLE "deliveries" ADD FOREIGN KEY ("operator_id") REFERENCES "operators" ("id");
-		ALTER TABLE "deliveries" ADD FOREIGN KEY ("address_id") REFERENCES "addresses" ("id");
+		ALTER TABLE "deliveries" ADD FOREIGN KEY ("city_id") REFERENCES "cities" ("id");
 		ALTER TABLE "deliveries" ADD FOREIGN KEY ("energy_id") REFERENCES "energies" ("id");
 		ALTER TABLE "deliveries" ADD FOREIGN KEY ("sector_id") REFERENCES "sectors" ("id");
 		ALTER TABLE "addresses" ADD FOREIGN KEY ("city_id") REFERENCES "cities" ("id");
@@ -245,13 +246,14 @@ def insert_into_addresses():
 #inserting data from dataframes into tables using psycopg2
 def insert_into_deliveries():
 
-	query = """SELECT DISTINCT ad.year, ad.code_iris,ad.consu, s.id as sector_id, 
-		o.id as operator_id,e.id as energy_id,a.id as address_id
+	query = """SELECT DISTINCT ad.year, ad.code_iris,ad.consu, ad.address, s.id as sector_id, 
+		o.id as operator_id,e.id as energy_id, c.id as city_id
 		from all_data ad 
 		join sectors s on s.name = ad.code 
 		join operators o on ad.operators = o.name 
 		join energies e on ad.energy = e.name 
-		join addresses a on ad.address = a.name""" 
+		join addresses a on ad.address = a.name
+		join cities c on ad.city = c.name"""
 	cursor.execute(query)
 	result = cursor.fetchall()
 	print(result[0])
@@ -263,16 +265,18 @@ def insert_into_deliveries():
 	print(result[0][4])
 	print(result[0][5])
 	print(result[0][6])
+	print(result[0][7])
+
 	for row in result:
-		query2 = """SELECT * FROM deliveries WHERE year = (%s) and iris_code = (%s) and consumption = (%s) 
-			and sector_id = (%s) and operator_id = (%s) and energy_id = (%s) and address_id = (%s) """
-		cursor.execute(query2,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}'))
+		query2 = """SELECT * FROM deliveries WHERE year = (%s) and iris_code = (%s) and consumption = (%s) and address = (%s)
+			and sector_id = (%s) and operator_id = (%s) and energy_id = (%s) and city_id = (%s) """
+		cursor.execute(query2,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}',f'{row[7]}'))
 		result = cursor.fetchall()
 		#print(result[0])
 		#print(len(result) == 0)
 		if len(result) == 0 : 
-			query = "INSERT INTO deliveries (year,iris_code,consumption,sector_id,operator_id,energy_id,address_id) VALUES (%s,%s,%s,%s,%s,%s,%s);"
-			cursor.execute(query,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}'))
+			query = "INSERT INTO deliveries (year,iris_code,consumption,address,sector_id,operator_id,energy_id,city_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s);"
+			cursor.execute(query,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}',f'{row[7]}'))
 
 
 ####################################################################################################################
@@ -373,5 +377,5 @@ if __name__ == "__main__":
 	#insert_into_sectors()
 	#insert_into_energies()
 	#insert_into_cities()
-	#insert_into_addresses()
-	#insert_into_deliveries()
+	insert_into_addresses()
+	insert_into_deliveries()
