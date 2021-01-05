@@ -4,7 +4,6 @@ import pandas as pd
 from sqlalchemy import create_engine
 import datetime
 
-
 ####################################################################################################################
 
 #import data from CSV using pandas
@@ -49,10 +48,9 @@ def create_tables():
 
 		CREATE TABLE IF NOT EXISTS "deliveries" (
 		  "id" SERIAL PRIMARY KEY,
-		  "date" date,
-		  "code" int,
-		  "territory" varchar,
-		  "consumption" float8,
+		  "year" int,
+		  "iris_code" varchar,
+		  "consumption" varchar,
 		  "sector_id" int,
 		  "operator_id" int,
 		  "energy_id" int,
@@ -71,9 +69,7 @@ def create_tables():
 
 		CREATE TABLE IF NOT EXISTS "cities" (
 		  "id" SERIAL PRIMARY KEY,
-		  "name" varchar , 
-		  "code_iris" varchar,
-		  UNIQUE("name","code_iris")
+		  "name" varchar UNIQUE
 		);
 
 		CREATE TABLE IF NOT EXISTS "addresses" (
@@ -132,22 +128,22 @@ def concatenate_gas(file,file2):
 	return gas
 
 #concat hot and cold 2018 and 2019 dataframes using pandas 
-def concatenate_hot_cold(file,file2):
-	file = file.head(7500)
-	file2 = file2.head(7500)
-	print(file)
-	print('*****************************')
-	print(file2)
-	#file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
-       #'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
-	#print('*****************************')
-	#print(file)
-	hot_cold = [file, file2]
-	hot_cold = pd.concat(hot_cold)
-	print('*****************************')
-	print(hot_cold)
-	print('*****************************')
-	return hot_cold
+# def concatenate_hot_cold(file,file2):
+# 	file = file.head(7500)
+# 	file2 = file2.head(7500)
+# 	print(file)
+# 	print('*****************************')
+# 	print(file2)
+# 	#file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
+#        #'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
+# 	#print('*****************************')
+# 	#print(file)
+# 	hot_cold = [file, file2]
+# 	hot_cold = pd.concat(hot_cold)
+# 	print('*****************************')
+# 	print(hot_cold)
+# 	print('*****************************')
+# 	return hot_cold
 
 ####################################################################################################################
 
@@ -214,7 +210,7 @@ def insert_into_sectors():
 	insertifnotexists4(table)
 
 def insertifnotexists4(table):
-	for name in table['name'].values:
+	for name in table['name'].values:	
 		query2 = """SELECT name FROM sectors WHERE name = (%s)"""
 		cursor.execute(query2,(f'{name}',))
 		result = cursor.fetchall()
@@ -243,49 +239,94 @@ def insert_into_addresses():
 			query = "INSERT INTO addresses (name,city_id) VALUES (%s,%s);"
 			cursor.execute(query,(f'{row[0]}',f'{row[1]}'))
 
-
-
 ####################################################################################################################
 
 # TABLE DELIVERIES
 #inserting data from dataframes into tables using psycopg2
 def insert_into_deliveries():
-	pass 
+
+	query = """SELECT DISTINCT ad.year, ad.code_iris,ad.consu, s.id as sector_id, 
+		o.id as operator_id,e.id as energy_id,a.id as address_id
+		from all_data ad 
+		join sectors s on s.name = ad.code 
+		join operators o on ad.operators = o.name 
+		join energies e on ad.energy = e.name 
+		join addresses a on ad.address = a.name""" 
+	cursor.execute(query)
+	result = cursor.fetchall()
+	print(result[0])
+	print("*******************************$")
+	print(result[0][0])
+	print(result[0][1])
+	print(result[0][2])
+	print(result[0][3])
+	print(result[0][4])
+	print(result[0][5])
+	print(result[0][6])
+	for row in result:
+		query2 = """SELECT * FROM deliveries WHERE year = (%s) and iris_code = (%s) and consumption = (%s) 
+			and sector_id = (%s) and operator_id = (%s) and energy_id = (%s) and address_id = (%s) """
+		cursor.execute(query2,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}'))
+		result = cursor.fetchall()
+		#print(result[0])
+		#print(len(result) == 0)
+		if len(result) == 0 : 
+			query = "INSERT INTO deliveries (year,iris_code,consumption,sector_id,operator_id,energy_id,address_id) VALUES (%s,%s,%s,%s,%s,%s,%s);"
+			cursor.execute(query,(f'{row[0]}',f'{row[1]}',f'{row[2]}',f'{row[3]}',f'{row[4]}',f'{row[5]}',f'{row[6]}'))
+
 
 ####################################################################################################################
 
 #TABLE CITIES
 #inserting data from dataframes into tables using psycopg2
 def insert_into_cities():
-	elec_table = elec[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
-	gas_table = gas[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
+
+	elec_table = elec['NOM_COMMUNE'].drop_duplicates()
+	gas_table = gas['NOM_COMMUNE'].drop_duplicates()
 	# concat both df to get one
 	table = [elec_table,gas_table]
-	table = pd.concat(table)
-	#print(table)
-	#print('*****************************')
-	print(table.info())
-	insertifnotexists2(table)
+	table = pd.concat(table).rename("name").to_frame()
+	print(table['name'].values)
+	print('*****************************')
+	insertifnotexists0(table)
 
-
-####################################################################################################################
-
-
-def insertifnotexists2(table):
-	#print(type(table.values[0][0]))
-	#print(type(table.values[0][1]))
-	for row in table.values:
-		query2 = """SELECT name, code_iris FROM cities WHERE name = %s AND code_iris = %s;"""
-		cursor.execute(query2,(f'{row[0]}',f'{row[1]}'))
+def insertifnotexists0(table):
+	for name in table['name'].values:
+		query2 = """SELECT name FROM cities WHERE name = (%s)"""
+		cursor.execute(query2,(f'{name}',))
 		result = cursor.fetchall()
-		#print(result)
 		#print(len(result) == 0)
-		if len(result) == 0 :
-			query = "INSERT INTO cities (name,code_iris) VALUES (%s,%s);"
-			cursor.execute(query,(f'{row[0]}',f'{row[1]}'))
-			#cursor.execute(query2,(row[0],row[1]))
-			#print(cursor.query)
-			conn.commit()
+		if len(result) == 0 : 
+			query = "INSERT INTO cities (name) VALUES (%s);"
+			cursor.execute(query,(f'{name}',))
+
+
+
+# 	elec_table = elec[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
+# 	gas_table = gas[['NOM_COMMUNE','CODE_IRIS']].drop_duplicates()
+# 	# concat both df to get one
+# 	table = [elec_table,gas_table]
+# 	table = pd.concat(table)
+# 	#print(table)
+# 	#print('*****************************')
+# 	print(table.info())
+# 	insertifnotexists2(table)
+
+# def insertifnotexists2(table):
+# 	#print(type(table.values[0][0]))
+# 	#print(type(table.values[0][1]))
+# 	for row in table.values:
+# 		query2 = """SELECT name, code_iris FROM cities WHERE name = %s AND code_iris = %s;"""
+# 		cursor.execute(query2,(f'{row[0]}',f'{row[1]}'))
+# 		result = cursor.fetchall()
+# 		#print(result)
+# 		#print(len(result) == 0)
+# 		if len(result) == 0 :
+# 			query = "INSERT INTO cities (name,code_iris) VALUES (%s,%s);"
+# 			cursor.execute(query,(f'{row[0]}',f'{row[1]}'))
+# 			#cursor.execute(query2,(row[0],row[1]))
+# 			#print(cursor.query)
+# 			conn.commit()
 
 ####################################################################################################################
 
@@ -327,9 +368,10 @@ if __name__ == "__main__":
 	elec = concatenate_electricity(elec_2018,elec_2019)
 	gas = concatenate_gas(gas_2018,gas_2019)
 	#hot_cold = concatenate_hot_cold(hot_cold_2018,hot_cold_2019)
+	#all_data_table()
 	#insert_into_operators()
 	#insert_into_sectors()
 	#insert_into_energies()
 	#insert_into_cities()
-	insert_into_addresses()
-	#all_data_table()
+	#insert_into_addresses()
+	#insert_into_deliveries()
