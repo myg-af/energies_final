@@ -3,7 +3,10 @@ from psycopg2 import OperationalError as e
 import pandas as pd
 from sqlalchemy import create_engine
 import datetime
-
+from data.database import db_connection
+from data.get_data import get_data
+from data.concat import concatenate_electricity, concatenate_gas
+#from data.get_insertion import insert_into_operators
 ####################################################################################################################
 
 #import data from CSV using pandas
@@ -101,25 +104,25 @@ gas_2019 = pd.read_csv('./data/gaz/donnees_gaz_adresse_2018.csv',sep=';',encodin
 
 ####################################################################################################################
 
-#concat electricity 2018 and 2019 dataframes using pandas 
-def concatenate_electricity(file,file2):
-	file = file.head(15100)
-	file2 = file2.head(15100)
-	file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
-       'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
-	elec = [file, file2]
-	elec = pd.concat(elec)
-	elec.reset_index(drop=True, inplace=True)
-	return elec
+# #concat electricity 2018 and 2019 dataframes using pandas 
+# def concatenate_electricity(file,file2):
+# 	file = file.head(15100)
+# 	file2 = file2.head(15100)
+# 	file = file[['OPERATEUR', 'ANNEE', 'FILIERE', 'CODE_IRIS','ADRESSE', 'NOM_COMMUNE',
+#        'CODE_GRAND_SECTEUR', 'CONSO', 'PDL']]
+# 	elec = [file, file2]
+# 	elec = pd.concat(elec)
+# 	elec.reset_index(drop=True, inplace=True)
+# 	return elec
 
-#concat gas 2018 and 2019 dataframes using pandas 
-def concatenate_gas(file,file2):
-	file = file.head(15100)
-	file2 = file2.head(15100)
-	gas = [file, file2]
-	gas = pd.concat(gas)
-	gas.reset_index(drop=True, inplace=True)
-	return gas
+# #concat gas 2018 and 2019 dataframes using pandas 
+# def concatenate_gas(file,file2):
+# 	file = file.head(15100)
+# 	file2 = file2.head(15100)
+# 	gas = [file, file2]
+# 	gas = pd.concat(gas)
+# 	gas.reset_index(drop=True, inplace=True)
+# 	return gas
 
 
 ####################################################################################################################
@@ -309,12 +312,6 @@ def concatenate_gas(file,file2):
 ####################################################################################################################
 
 
-# def get_data(cursor):
-# 	cursor.execute("""SELECT * FROM cities""")
-# 	data = cursor.fetchall()
-# 	return data
-
-
 if __name__ == "__main__":
 	print(__name__)
 
@@ -329,11 +326,11 @@ if __name__ == "__main__":
 
 	# engine = alchemy_connection()
 
-	#elec = concatenate_electricity(elec_2018,elec_2019)
-	#as = concatenate_gas(gas_2018,gas_2019)
+	elec = concatenate_electricity(elec_2018,elec_2019)
+	gas = concatenate_gas(gas_2018,gas_2019)
 
 	#tables_function()
-	data = get_data()
+	data = get_data('operators')
 	print(data)
 	
 	#all_data_table()
