@@ -318,7 +318,7 @@ if __name__ == "__main__":
 	conn = db_connection('final_project','sandrinevuachet','postgres','localhost',5432)
 	cursor = conn.cursor()
 	conn.autocommit = True
-
+	engine = connection()
 
 	# from data.database import create_tables, extra_table
 	# create_tables(cursor)
